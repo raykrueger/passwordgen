@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"regexp"
@@ -20,7 +21,7 @@ func main() {
 		min   = flag.Int("min", 4, "minimum number of letters in each word")
 		max   = flag.Int("max", 6, "maximum number of letters in each word")
 		sep   = flag.String("sep", "-", "separator between words")
-		dict  = flag.String("dict", "/usr/share/dict/words", "path to word list")
+		dict  = flag.String("dict", "", "path to word list (default: built-in list)")
 		lower = flag.Bool("lower", false, "do not capitalize words")
 	)
 	flag.Parse()
@@ -30,13 +31,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	words, err := loadWords(*dict, *min, *max)
+	src := strings.NewReader(embeddedWords)
+	var r io.Reader = src
+	if *dict != "" {
+		f, err := os.Open(*dict)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "passwordgen:", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		r = f
+	}
+
+	words, err := loadWords(r, *min, *max)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "passwordgen:", err)
 		os.Exit(1)
 	}
 	if len(words) == 0 {
-		fmt.Fprintf(os.Stderr, "passwordgen: no %d-%d letter words found in %s\n", *min, *max, *dict)
+		fmt.Fprintf(os.Stderr, "passwordgen: no %d-%d letter words found\n", *min, *max)
 		os.Exit(1)
 	}
 
@@ -48,18 +61,12 @@ func main() {
 	fmt.Println(phrase)
 }
 
-// loadWords returns every word in the file at path made of between min and max
-// lowercase ASCII letters (inclusive).
-func loadWords(path string, min, max int) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
+// loadWords returns every word from r made of between min and max lowercase
+// ASCII letters (inclusive).
+func loadWords(r io.Reader, min, max int) ([]string, error) {
 	re := regexp.MustCompile(fmt.Sprintf("^[a-z]{%d,%d}$", min, max))
 	var words []string
-	s := bufio.NewScanner(f)
+	s := bufio.NewScanner(r)
 	for s.Scan() {
 		if w := s.Text(); re.MatchString(w) {
 			words = append(words, w)
