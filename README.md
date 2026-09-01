@@ -16,13 +16,13 @@ calls at runtime.
 Requires **Go 1.24+**.
 
 ```sh
-go install passwordgen@latest
+go install github.com/raykrueger/passwordgen@latest
 ```
 
 Or build from a checkout:
 
 ```sh
-git clone <repo-url> passwordgen
+git clone https://github.com/raykrueger/passwordgen.git
 cd passwordgen
 go build -o passwordgen .
 ```
