@@ -1,65 +1,112 @@
 # passwordgen
 
-Generate memorable passphrases by joining random dictionary words.
+**Strong passwords you can actually remember.** Random character strings like
+`k7$Qm2!x` are secure but impossible to recall; the passwords people can
+remember are weak. `passwordgen` splits the difference: it assembles
+passphrases from random common words — `Sphinx-Cosmic-Scroll-County` — that are
+easy to memorize yet carry as much entropy as a random 8-character password.
 
-Randomness comes from `crypto/rand`. A word list is compiled into the
-binary (via `//go:embed`), so it runs anywhere with no external files.
-By default it draws 4 words of 4–6 letters each. Widening the length range grows
-the word pool, which raises the entropy per word — a passphrase like this
-is comparable to (or stronger than) a random 8-character password, but far
-easier to remember.
+Words are drawn from the [EFF Diceware wordlist](https://www.eff.org/dice)
+using Go's `crypto/rand`, so every passphrase is genuinely unpredictable. The
+wordlist is compiled into the binary, so there are no external files or network
+calls at runtime.
 
-## Build
+## Installation
+
+Requires **Go 1.24+**.
 
 ```sh
+go install passwordgen@latest
+```
+
+Or build from a checkout:
+
+```sh
+git clone <repo-url> passwordgen
+cd passwordgen
 go build -o passwordgen .
 ```
+
+## Quick start
+
+```sh
+$ passwordgen
+Sphinx-Cosmic-Scroll-County
+```
+
+That's a passphrase of four random words, each 4–6 letters, capitalized and
+dash-separated — roughly 46 bits of entropy. Run it again for a new one.
 
 ## Usage
 
 ```sh
-passwordgen                       # e.g. Level-Smile-Chair-Slaw
-passwordgen -words 5 -min 3 -max 8  # five words, 3-8 letters each
-passwordgen -sep _ -lower         # level_smile_chair_slaw
-passwordgen -digits 2             # Level-Smile-Chair-Slaw-17
+passwordgen                          # Level-Smile-Chair-Slaw
+passwordgen -words 5                 # five words instead of four
+passwordgen -min 3 -max 9            # full wordlist range, ~13 bits/word
+passwordgen -sep _ -lower            # level_smile_chair_slaw
+passwordgen -digits 2                # Level-Smile-Chair-Slaw-17
 ```
 
 ### Flags
 
-| Flag     | Default                  | Description                           |
-|----------|--------------------------|---------------------------------------|
-| `-words` | `4`                      | number of words in the passphrase     |
-| `-min`   | `4`                      | minimum number of letters in each word|
-| `-max`   | `6`                      | maximum number of letters in each word|
-| `-sep`   | `-`                      | separator between words               |
-| `-dict`  | *(built-in list)*        | path to an external word list         |
-| `-lower` | `false`                  | do not capitalize words               |
-| `-digits`| `0`                      | append this many random digits        |
+| Flag      | Default           | Description                             |
+|-----------|-------------------|-----------------------------------------|
+| `-words`  | `4`               | number of words in the passphrase       |
+| `-min`    | `4`               | minimum letters per word                |
+| `-max`    | `6`               | maximum letters per word                |
+| `-sep`    | `-`               | separator between words                 |
+| `-lower`  | `false`           | do not capitalize words                 |
+| `-digits` | `0`               | append this many random digits          |
+| `-dict`   | *(built-in list)* | path to an external word list           |
+
+## Strength
+
+Each word is chosen uniformly at random from the pool, so entropy is
+`words × log₂(pool size)`. The defaults (`-min 4 -max 6`) use a ~2,766-word
+subset ≈ 11.4 bits/word; widening to `-min 3 -max 9` uses the full 7,776-word
+list = exactly 12.9 bits/word (canonical Diceware).
+
+| Command                        | Entropy    |
+|--------------------------------|------------|
+| `passwordgen`                  | ~46 bits   |
+| `passwordgen -words 5`         | ~57 bits   |
+| `passwordgen -min 3 -max 9`    | ~52 bits   |
+| `passwordgen -words 6 -min 3 -max 9` | ~77 bits |
+
+The strength depends entirely on the random source — which is why you should
+let the tool pick. Choosing "memorable" words yourself collapses the pool and
+the entropy with it.
+
+### Satisfying "must contain a number" policies
+
+`-digits N` appends N cryptographically-random digits after the final
+separator (`-digits 2` → `...-Slaw-17`). Each digit adds only ~3.3 bits, far
+less per character than a word — so use the smallest N a policy requires, and
+reach for `-words 5` when you actually want more strength.
 
 ## Word list
 
-The built-in list (`words/words.txt`) is the [EFF "large" Diceware
-wordlist](https://www.eff.org/dice) — 7,776 common, recognizable English
-words of 3–9 letters, chosen specifically for passphrases (no obscure or
-ambiguous entries). The dice indices are stripped; one word per line.
+The built-in list (`words/words.txt`) is the EFF "large" Diceware wordlist:
+7,776 common, unambiguous English words of 3–9 letters, chosen specifically for
+passphrases. Dice indices are stripped; one word per line. Because it spans
+only 3–9 letters, `-min`/`-max` outside that range return nothing unless you
+supply a larger list with `-dict`.
 
-Because it only spans 3–9 letters, `-min`/`-max` outside that range yield
-nothing unless you supply a larger list with `-dict`. To regenerate:
+To regenerate from source:
 
 ```sh
 curl -fsS https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt \
   | awk '{print $2}' | grep -E '^[a-z]+$' | sort -u > words/words.txt
 ```
 
-## Digits
+## Development
 
-Some password policies insist on a number. `-digits N` appends N
-cryptographically-random digits (0–9) after the final separator, e.g.
-`-digits 2` → `Level-Smile-Chair-Slaw-17`. Each digit adds ~3.3 bits of
-entropy — far less per character than a word, so prefer adding a word
-(`-words 5`) for real strength and use digits only to satisfy the policy.
+```sh
+go test ./...    # run the test suite
+go vet ./...     # static checks
+```
 
-## Note
+## Acknowledgments
 
-Strength depends on choosing words uniformly at random from the full pool.
-This tool does that for you — picking words yourself defeats the purpose.
+The bundled wordlist is the [EFF Diceware "large" wordlist](https://www.eff.org/dice),
+by the Electronic Frontier Foundation, licensed **CC BY 3.0 US**.
