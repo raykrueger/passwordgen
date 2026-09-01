@@ -36,13 +36,17 @@ passwordgen -sep _ -lower         # prosy_locket_lube_cup
 
 ## Word list
 
-The built-in list (`words/words.txt`) holds ~76k lowercase English words of
-3–8 letters, derived from the system dictionary. Because it only spans 3–8
-letters, `-min`/`-max` outside that range yield nothing unless you supply a
-larger list with `-dict`. To regenerate:
+The built-in list (`words/words.txt`) is the [EFF "large" Diceware
+wordlist](https://www.eff.org/dice) — 7,776 common, recognizable English
+words of 3–9 letters, chosen specifically for passphrases (no obscure or
+ambiguous entries). The dice indices are stripped; one word per line.
+
+Because it only spans 3–9 letters, `-min`/`-max` outside that range yield
+nothing unless you supply a larger list with `-dict`. To regenerate:
 
 ```sh
-grep -xE '[a-z]{3,8}' /usr/share/dict/words > words/words.txt
+curl -fsS https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt \
+  | awk '{print $2}' | grep -E '^[a-z]+$' | sort -u > words/words.txt
 ```
 
 ## Note

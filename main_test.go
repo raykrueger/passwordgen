@@ -133,7 +133,7 @@ func TestEmbeddedWords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadWords on embedded list: %v", err)
 	}
-	if len(words) < 1000 {
+	if len(words) < 2000 {
 		t.Errorf("embedded list has only %d words in 4-6 range, expected many more", len(words))
 	}
 }
