@@ -17,9 +17,9 @@ import (
 
 func main() {
 	var (
-		count = flag.Int("words", 4, "number of words in the passphrase")
-		min   = flag.Int("min", 4, "minimum number of letters in each word")
-		max   = flag.Int("max", 6, "maximum number of letters in each word")
+		count  = flag.Int("words", 4, "number of words in the passphrase")
+		min    = flag.Int("min", 4, "minimum number of letters in each word")
+		max    = flag.Int("max", 6, "maximum number of letters in each word")
 		sep    = flag.String("sep", "-", "separator between words")
 		dict   = flag.String("dict", "", "path to word list (default: built-in list)")
 		lower  = flag.Bool("lower", false, "do not capitalize words")
