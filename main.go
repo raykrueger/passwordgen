@@ -6,6 +6,7 @@ package main
 import (
 	"bufio"
 	"crypto/rand"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,10 +17,19 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "passwordgen:", err)
+		os.Exit(1)
+	}
+}
+
+// run parses flags, builds a passphrase, and prints it. It returns an error
+// rather than calling os.Exit so that deferred cleanup runs.
+func run() error {
 	var (
 		count  = flag.Int("words", 4, "number of words in the passphrase")
-		min    = flag.Int("min", 4, "minimum number of letters in each word")
-		max    = flag.Int("max", 6, "maximum number of letters in each word")
+		minLen = flag.Int("min", 4, "minimum number of letters in each word")
+		maxLen = flag.Int("max", 6, "maximum number of letters in each word")
 		sep    = flag.String("sep", "-", "separator between words")
 		dict   = flag.String("dict", "", "path to word list (default: built-in list)")
 		lower  = flag.Bool("lower", false, "do not capitalize words")
@@ -27,59 +37,52 @@ func main() {
 	)
 	flag.Parse()
 
-	if *min < 1 || *max < *min {
-		fmt.Fprintln(os.Stderr, "passwordgen: require 1 <= min <= max")
-		os.Exit(1)
+	if *minLen < 1 || *maxLen < *minLen {
+		return errors.New("require 1 <= min <= max")
 	}
 	if *digits < 0 {
-		fmt.Fprintln(os.Stderr, "passwordgen: digits must not be negative")
-		os.Exit(1)
+		return errors.New("digits must not be negative")
 	}
 
-	src := strings.NewReader(embeddedWords)
-	var r io.Reader = src
+	var r io.Reader = strings.NewReader(embeddedWords)
 	if *dict != "" {
 		f, err := os.Open(*dict)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "passwordgen:", err)
-			os.Exit(1)
+			return err
 		}
 		defer f.Close()
 		r = f
 	}
 
-	words, err := loadWords(r, *min, *max)
+	words, err := loadWords(r, *minLen, *maxLen)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "passwordgen:", err)
-		os.Exit(1)
+		return err
 	}
 	if len(words) == 0 {
-		fmt.Fprintf(os.Stderr, "passwordgen: no %d-%d letter words found\n", *min, *max)
-		os.Exit(1)
+		return fmt.Errorf("no %d-%d letter words found", *minLen, *maxLen)
 	}
 
 	phrase, err := passphrase(words, *count, *sep, !*lower)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "passwordgen:", err)
-		os.Exit(1)
+		return err
 	}
 
 	if *digits > 0 {
 		tail, err := randomDigits(*digits)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "passwordgen:", err)
-			os.Exit(1)
+			return err
 		}
 		phrase += *sep + tail
 	}
 
 	fmt.Println(phrase)
+	return nil
 }
 
-// loadWords returns every word from r made of between min and max lowercase
-// ASCII letters (inclusive).
-func loadWords(r io.Reader, min, max int) ([]string, error) {
-	re := regexp.MustCompile(fmt.Sprintf("^[a-z]{%d,%d}$", min, max))
+// loadWords returns every word from r made of between minLen and maxLen
+// lowercase ASCII letters (inclusive).
+func loadWords(r io.Reader, minLen, maxLen int) ([]string, error) {
+	re := regexp.MustCompile(fmt.Sprintf("^[a-z]{%d,%d}$", minLen, maxLen))
 	var words []string
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -94,7 +97,7 @@ func loadWords(r io.Reader, min, max int) ([]string, error) {
 }
 
 // passphrase joins count words chosen uniformly at random from words using a
-// cryptographically secure source.
+// cryptographically secure source. words must not be empty.
 func passphrase(words []string, count int, sep string, capitalize bool) (string, error) {
 	parts := make([]string, count)
 	for i := range parts {
@@ -110,7 +113,8 @@ func passphrase(words []string, count int, sep string, capitalize bool) (string,
 	return strings.Join(parts, sep), nil
 }
 
-// choose returns a random element of words using crypto/rand.
+// choose returns a random element of words using crypto/rand. words must not be
+// empty; crypto/rand.Int panics on a non-positive bound.
 func choose(words []string) (string, error) {
 	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(words))))
 	if err != nil {
@@ -124,7 +128,7 @@ func choose(words []string) (string, error) {
 func randomDigits(n int) (string, error) {
 	var b strings.Builder
 	b.Grow(n)
-	for i := 0; i < n; i++ {
+	for range n {
 		d, err := rand.Int(rand.Reader, big.NewInt(10))
 		if err != nil {
 			return "", err
