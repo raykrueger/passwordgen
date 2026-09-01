@@ -123,7 +123,12 @@ go test ./...    # run the test suite
 go vet ./...     # static checks
 ```
 
-## Acknowledgments
+## License
 
-The bundled wordlist is the [EFF Diceware "large" wordlist](https://www.eff.org/dice),
-by the Electronic Frontier Foundation, licensed **CC BY 3.0 US**.
+The code is licensed under the [MIT License](LICENSE).
+
+The bundled wordlist (`words/words.txt`) is a derivative of the
+[EFF Diceware "large" wordlist](https://www.eff.org/dice) by the Electronic
+Frontier Foundation, licensed **CC BY 3.0 US**. Dice indices were stripped;
+the words are unchanged. See [`words/LICENSE`](words/LICENSE) for the required
+attribution.

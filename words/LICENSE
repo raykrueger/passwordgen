@@ -1,0 +1,20 @@
+Word list attribution
+======================
+
+The file words.txt in this directory is derived from:
+
+    Title:   EFF's "large" wordlist for passphrases (eff_large_wordlist.txt)
+    Author:  Electronic Frontier Foundation (Joseph Bonneau)
+    Source:  https://www.eff.org/dice
+    License: Creative Commons Attribution 3.0 United States (CC BY 3.0 US)
+             https://creativecommons.org/licenses/by/3.0/us/
+
+Changes made:
+    The original file lists each word preceded by a five-digit dice index
+    (e.g. "16663  copilot"). This derivative strips the dice indices, keeps
+    one word per line, removes entries containing non-letter characters, and
+    sorts the result. The words themselves are unchanged.
+
+This word list is licensed under CC BY 3.0 US and is used here under the terms
+of that license. This attribution does not affect the MIT license that covers
+the rest of this project (see ../LICENSE).
