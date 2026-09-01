@@ -1,11 +1,13 @@
 package main
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
 
 func TestLoadWords(t *testing.T) {
+	t.Parallel()
 	const list = `cat
 fish
 gold
@@ -17,9 +19,9 @@ he-llo
 mind
 `
 	tests := []struct {
-		name     string
-		min, max int
-		want     []string
+		name           string
+		minLen, maxLen int
+		want           []string
 	}{
 		{"exactly four", 4, 4, []string{"fish", "gold", "mind"}},
 		{"range three to five", 3, 5, []string{"cat", "fish", "gold", "zebra", "mind"}},
@@ -29,29 +31,32 @@ mind
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := loadWords(strings.NewReader(list), tt.min, tt.max)
+			t.Parallel()
+			got, err := loadWords(strings.NewReader(list), tt.minLen, tt.maxLen)
 			if err != nil {
 				t.Fatalf("loadWords returned error: %v", err)
 			}
-			if !equal(got, tt.want) {
-				t.Errorf("loadWords(%d, %d) = %v, want %v", tt.min, tt.max, got, tt.want)
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("loadWords(%d, %d) = %v, want %v", tt.minLen, tt.maxLen, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestLoadWordsRejectsNonLowercaseAlpha(t *testing.T) {
+	t.Parallel()
 	const list = "Upper\nd1git\nhe-llo\nspace bar\ngood\n"
 	got, err := loadWords(strings.NewReader(list), 1, 20)
 	if err != nil {
 		t.Fatalf("loadWords returned error: %v", err)
 	}
-	if !equal(got, []string{"good"}) {
+	if !slices.Equal(got, []string{"good"}) {
 		t.Errorf("loadWords = %v, want [good]", got)
 	}
 }
 
 func TestPassphraseWordCount(t *testing.T) {
+	t.Parallel()
 	words := []string{"alpha", "bravo", "charlie", "delta"}
 	for _, count := range []int{1, 4, 10} {
 		p, err := passphrase(words, count, "-", false)
@@ -66,6 +71,7 @@ func TestPassphraseWordCount(t *testing.T) {
 }
 
 func TestPassphraseSeparator(t *testing.T) {
+	t.Parallel()
 	words := []string{"same"}
 	p, err := passphrase(words, 3, "_", false)
 	if err != nil {
@@ -77,29 +83,36 @@ func TestPassphraseSeparator(t *testing.T) {
 }
 
 func TestPassphraseCapitalize(t *testing.T) {
+	t.Parallel()
 	words := []string{"gold"}
+	tests := []struct {
+		name       string
+		capitalize bool
+		want       string
+	}{
+		{"capitalized", true, "Gold-Gold"},
+		{"lowercase", false, "gold-gold"},
+	}
 
-	up, err := passphrase(words, 2, "-", true)
-	if err != nil {
-		t.Fatalf("passphrase error: %v", err)
-	}
-	if up != "Gold-Gold" {
-		t.Errorf("capitalize=true: got %q, want Gold-Gold", up)
-	}
-
-	low, err := passphrase(words, 2, "-", false)
-	if err != nil {
-		t.Fatalf("passphrase error: %v", err)
-	}
-	if low != "gold-gold" {
-		t.Errorf("capitalize=false: got %q, want gold-gold", low)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := passphrase(words, 2, "-", tt.capitalize)
+			if err != nil {
+				t.Fatalf("passphrase error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("capitalize=%v: got %q, want %q", tt.capitalize, got, tt.want)
+			}
+		})
 	}
 }
 
 func TestChooseWithinPool(t *testing.T) {
+	t.Parallel()
 	words := []string{"one", "two", "six"}
 	pool := map[string]bool{"one": true, "two": true, "six": true}
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		got, err := choose(words)
 		if err != nil {
 			t.Fatalf("choose error: %v", err)
@@ -113,9 +126,10 @@ func TestChooseWithinPool(t *testing.T) {
 // TestChooseDistribution is a light sanity check that choose eventually hits
 // every element of a small pool, i.e. it isn't stuck on one index.
 func TestChooseDistribution(t *testing.T) {
+	t.Parallel()
 	words := []string{"a", "b", "c", "d"}
 	seen := map[string]bool{}
-	for i := 0; i < 500; i++ {
+	for range 500 {
 		got, err := choose(words)
 		if err != nil {
 			t.Fatalf("choose error: %v", err)
@@ -128,6 +142,7 @@ func TestChooseDistribution(t *testing.T) {
 }
 
 func TestRandomDigits(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{1, 2, 4, 8} {
 		got, err := randomDigits(n)
 		if err != nil {
@@ -145,6 +160,7 @@ func TestRandomDigits(t *testing.T) {
 }
 
 func TestRandomDigitsZero(t *testing.T) {
+	t.Parallel()
 	got, err := randomDigits(0)
 	if err != nil {
 		t.Fatalf("randomDigits(0) error: %v", err)
@@ -157,8 +173,9 @@ func TestRandomDigitsZero(t *testing.T) {
 // TestRandomDigitsSpread checks that every digit 0-9 shows up over many draws,
 // i.e. the generator isn't stuck on a subset.
 func TestRandomDigitsSpread(t *testing.T) {
+	t.Parallel()
 	seen := map[rune]bool{}
-	for i := 0; i < 500; i++ {
+	for range 500 {
 		s, err := randomDigits(4)
 		if err != nil {
 			t.Fatalf("randomDigits error: %v", err)
@@ -174,6 +191,7 @@ func TestRandomDigitsSpread(t *testing.T) {
 
 // TestEmbeddedWords guards against an empty or malformed built-in list.
 func TestEmbeddedWords(t *testing.T) {
+	t.Parallel()
 	words, err := loadWords(strings.NewReader(embeddedWords), 4, 6)
 	if err != nil {
 		t.Fatalf("loadWords on embedded list: %v", err)
@@ -181,16 +199,4 @@ func TestEmbeddedWords(t *testing.T) {
 	if len(words) < 2000 {
 		t.Errorf("embedded list has only %d words in 4-6 range, expected many more", len(words))
 	}
-}
-
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
