@@ -20,14 +20,19 @@ func main() {
 		count = flag.Int("words", 4, "number of words in the passphrase")
 		min   = flag.Int("min", 4, "minimum number of letters in each word")
 		max   = flag.Int("max", 6, "maximum number of letters in each word")
-		sep   = flag.String("sep", "-", "separator between words")
-		dict  = flag.String("dict", "", "path to word list (default: built-in list)")
-		lower = flag.Bool("lower", false, "do not capitalize words")
+		sep    = flag.String("sep", "-", "separator between words")
+		dict   = flag.String("dict", "", "path to word list (default: built-in list)")
+		lower  = flag.Bool("lower", false, "do not capitalize words")
+		digits = flag.Int("digits", 0, "append this many random digits to the end")
 	)
 	flag.Parse()
 
 	if *min < 1 || *max < *min {
 		fmt.Fprintln(os.Stderr, "passwordgen: require 1 <= min <= max")
+		os.Exit(1)
+	}
+	if *digits < 0 {
+		fmt.Fprintln(os.Stderr, "passwordgen: digits must not be negative")
 		os.Exit(1)
 	}
 
@@ -58,6 +63,16 @@ func main() {
 		fmt.Fprintln(os.Stderr, "passwordgen:", err)
 		os.Exit(1)
 	}
+
+	if *digits > 0 {
+		tail, err := randomDigits(*digits)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "passwordgen:", err)
+			os.Exit(1)
+		}
+		phrase += *sep + tail
+	}
+
 	fmt.Println(phrase)
 }
 
@@ -102,4 +117,19 @@ func choose(words []string) (string, error) {
 		return "", err
 	}
 	return words[n.Int64()], nil
+}
+
+// randomDigits returns a string of n decimal digits (0-9) chosen with
+// crypto/rand. Leading zeros are preserved.
+func randomDigits(n int) (string, error) {
+	var b strings.Builder
+	b.Grow(n)
+	for i := 0; i < n; i++ {
+		d, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		b.WriteByte('0' + byte(d.Int64()))
+	}
+	return b.String(), nil
 }

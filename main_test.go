@@ -127,6 +127,51 @@ func TestChooseDistribution(t *testing.T) {
 	}
 }
 
+func TestRandomDigits(t *testing.T) {
+	for _, n := range []int{1, 2, 4, 8} {
+		got, err := randomDigits(n)
+		if err != nil {
+			t.Fatalf("randomDigits(%d) error: %v", n, err)
+		}
+		if len(got) != n {
+			t.Errorf("randomDigits(%d) = %q, want length %d", n, got, len(got))
+		}
+		for _, c := range got {
+			if c < '0' || c > '9' {
+				t.Errorf("randomDigits(%d) = %q, contains non-digit %q", n, got, c)
+			}
+		}
+	}
+}
+
+func TestRandomDigitsZero(t *testing.T) {
+	got, err := randomDigits(0)
+	if err != nil {
+		t.Fatalf("randomDigits(0) error: %v", err)
+	}
+	if got != "" {
+		t.Errorf("randomDigits(0) = %q, want empty string", got)
+	}
+}
+
+// TestRandomDigitsSpread checks that every digit 0-9 shows up over many draws,
+// i.e. the generator isn't stuck on a subset.
+func TestRandomDigitsSpread(t *testing.T) {
+	seen := map[rune]bool{}
+	for i := 0; i < 500; i++ {
+		s, err := randomDigits(4)
+		if err != nil {
+			t.Fatalf("randomDigits error: %v", err)
+		}
+		for _, c := range s {
+			seen[c] = true
+		}
+	}
+	if len(seen) != 10 {
+		t.Errorf("only produced %d distinct digits: %v", len(seen), seen)
+	}
+}
+
 // TestEmbeddedWords guards against an empty or malformed built-in list.
 func TestEmbeddedWords(t *testing.T) {
 	words, err := loadWords(strings.NewReader(embeddedWords), 4, 6)
