@@ -11,6 +11,10 @@ using Go's `crypto/rand`, so every passphrase is genuinely unpredictable. The
 wordlist is compiled into the binary, so there are no external files or network
 calls at runtime.
 
+If you've seen [xkcd 936 ("correct horse battery staple")](https://xkcd.com/936/),
+this is that idea as a command-line tool — with the crucial detail that the
+words are chosen by a cryptographic RNG, not by a human.
+
 ## Installation
 
 Requires **Go 1.24+**.
