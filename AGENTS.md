@@ -20,7 +20,9 @@ gofmt -l .                  # must print nothing
 go run .                    # try it
 ```
 
-`staticcheck` currently can't run here: its binary predates the Go 1.26 toolchain and errors out. `gofmt` + `go vet` are the enforced gates.
+`staticcheck` currently can't run here: its binary predates the Go 1.26 toolchain and errors out. `gofmt` + `go vet` are the gates.
+
+**These checks are not automated** — there is no CI workflow, pre-commit hook, or Makefile. Run `gofmt -l .`, `go vet ./...`, and `go test -race ./...` manually before every commit; nothing else will catch a regression.
 
 ## Invariants (don't break these)
 
