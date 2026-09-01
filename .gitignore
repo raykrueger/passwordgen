@@ -1,0 +1,15 @@
+# Binaries
+/passwordgen
+*.exe
+*.out
+
+# Test artifacts
+*.test
+*.prof
+coverage.*
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
