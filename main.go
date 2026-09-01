@@ -16,21 +16,27 @@ import (
 
 func main() {
 	var (
-		count  = flag.Int("words", 4, "number of words in the passphrase")
-		length = flag.Int("length", 4, "number of letters in each word")
-		sep    = flag.String("sep", "-", "separator between words")
-		dict   = flag.String("dict", "/usr/share/dict/words", "path to word list")
-		lower  = flag.Bool("lower", false, "do not capitalize words")
+		count = flag.Int("words", 4, "number of words in the passphrase")
+		min   = flag.Int("min", 4, "minimum number of letters in each word")
+		max   = flag.Int("max", 6, "maximum number of letters in each word")
+		sep   = flag.String("sep", "-", "separator between words")
+		dict  = flag.String("dict", "/usr/share/dict/words", "path to word list")
+		lower = flag.Bool("lower", false, "do not capitalize words")
 	)
 	flag.Parse()
 
-	words, err := loadWords(*dict, *length)
+	if *min < 1 || *max < *min {
+		fmt.Fprintln(os.Stderr, "passwordgen: require 1 <= min <= max")
+		os.Exit(1)
+	}
+
+	words, err := loadWords(*dict, *min, *max)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "passwordgen:", err)
 		os.Exit(1)
 	}
 	if len(words) == 0 {
-		fmt.Fprintf(os.Stderr, "passwordgen: no %d-letter words found in %s\n", *length, *dict)
+		fmt.Fprintf(os.Stderr, "passwordgen: no %d-%d letter words found in %s\n", *min, *max, *dict)
 		os.Exit(1)
 	}
 
@@ -42,16 +48,16 @@ func main() {
 	fmt.Println(phrase)
 }
 
-// loadWords returns every word in the file at path that is exactly length
-// lowercase ASCII letters.
-func loadWords(path string, length int) ([]string, error) {
+// loadWords returns every word in the file at path made of between min and max
+// lowercase ASCII letters (inclusive).
+func loadWords(path string, min, max int) ([]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	re := regexp.MustCompile(fmt.Sprintf("^[a-z]{%d}$", length))
+	re := regexp.MustCompile(fmt.Sprintf("^[a-z]{%d,%d}$", min, max))
 	var words []string
 	s := bufio.NewScanner(f)
 	for s.Scan() {
