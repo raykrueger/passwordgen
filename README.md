@@ -84,6 +84,23 @@ separator (`-digits 2` → `...-Slaw-17`). Each digit adds only ~3.3 bits, far
 less per character than a word — so use the smallest N a policy requires, and
 reach for `-words 5` when you actually want more strength.
 
+## NIST alignment
+
+Passphrases like these are exactly what modern federal guidance recommends.
+[NIST SP 800-63B](https://pages.nist.gov/800-63-3/sp800-63b.html) (Digital
+Identity Guidelines) reversed decades of bad password advice, and `passwordgen`
+lines up with it:
+
+- **Length over complexity** — NIST prioritizes long passwords and explicitly
+  drops mandatory composition rules (forced mixes of upper/lower/digits/
+  symbols). A four-word passphrase is long and memorable without them.
+- **Encourages passphrases** — NIST calls out multi-word secrets as a good
+  practice; that is the entire premise here.
+
+The one thing NIST-style guidance can't do for you is composition mandates from
+*older* or non-conforming policies that still demand a digit or symbol — see
+[`-digits`](#satisfying-must-contain-a-number-policies) for that.
+
 ## Word list
 
 The built-in list (`words/words.txt`) is the EFF "large" Diceware wordlist:
