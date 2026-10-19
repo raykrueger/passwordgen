@@ -54,16 +54,17 @@ passwordgen -n | pbcopy              # copy without a trailing newline
 
 ### Flags
 
-| Flag      | Default           | Description                             |
-|-----------|-------------------|-----------------------------------------|
-| `-words`  | `4`               | number of words in the passphrase       |
-| `-min`    | `4`               | minimum letters per word                |
-| `-max`    | `6`               | maximum letters per word                |
-| `-sep`    | `-`               | separator between words                 |
-| `-lower`  | `false`           | do not capitalize words                 |
-| `-digits` | `0`               | append this many random digits          |
-| `-dict`   | *(built-in list)* | path to an external word list           |
-| `-n`      | `false`           | do not print a trailing newline         |
+| Flag       | Default           | Description                       |
+|------------|-------------------|-----------------------------------|
+| `-words`   | `4`               | number of words in the passphrase |
+| `-min`     | `4`               | minimum letters per word          |
+| `-max`     | `6`               | maximum letters per word          |
+| `-sep`     | `-`               | separator between words           |
+| `-lower`   | `false`           | do not capitalize words           |
+| `-digits`  | `0`               | append this many random digits    |
+| `-dict`    | *(built-in list)* | path to an external word list     |
+| `-n`       | `false`           | do not print a trailing newline   |
+| `-version` | `false`           | print the version and exit        |
 
 ## Strength
 

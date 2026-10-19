@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime/debug"
 	"slices"
 	"strings"
 	"testing"
@@ -198,5 +199,37 @@ func TestEmbeddedWords(t *testing.T) {
 	}
 	if len(words) < 2000 {
 		t.Errorf("embedded list has only %d words in 4-6 range, expected many more", len(words))
+	}
+}
+
+func TestVersionString(t *testing.T) {
+	t.Parallel()
+	vcs := func(rev, modified string) []debug.BuildSetting {
+		return []debug.BuildSetting{
+			{Key: "vcs.revision", Value: rev},
+			{Key: "vcs.modified", Value: modified},
+		}
+	}
+	tests := []struct {
+		name string
+		v    string
+		info *debug.BuildInfo
+		ok   bool
+		want string
+	}{
+		{"ldflags wins", "v9.9.9", &debug.BuildInfo{Main: debug.Module{Version: "v0.2.0"}}, true, "v9.9.9"},
+		{"no build info", "", nil, false, "unknown"},
+		{"module version", "", &debug.BuildInfo{Main: debug.Module{Version: "v0.2.0"}}, true, "v0.2.0"},
+		{"devel with revision", "", &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}, Settings: vcs("4d8efe2abcdef0123", "false")}, true, "(devel) 4d8efe2"},
+		{"devel dirty", "", &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}, Settings: vcs("4d8efe2abcdef0123", "true")}, true, "(devel) 4d8efe2-dirty"},
+		{"devel no vcs", "", &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}}, true, "(devel)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := versionString(tt.v, tt.info, tt.ok); got != tt.want {
+				t.Errorf("versionString() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

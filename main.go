@@ -13,8 +13,14 @@ import (
 	"math/big"
 	"os"
 	"regexp"
+	"runtime/debug"
 	"strings"
 )
+
+// version is the release version. It is normally empty and read from the
+// module build info; release builds may set it with
+// -ldflags "-X main.version=v1.2.3".
+var version string
 
 func main() {
 	if err := run(); err != nil {
@@ -35,8 +41,15 @@ func run() error {
 		lower     = flag.Bool("lower", false, "do not capitalize words")
 		digits    = flag.Int("digits", 0, "append this many random digits to the end")
 		noNewline = flag.Bool("n", false, "do not print a trailing newline (e.g. for piping to pbcopy)")
+		showVer   = flag.Bool("version", false, "print the version and exit")
 	)
 	flag.Parse()
+
+	if *showVer {
+		info, ok := debug.ReadBuildInfo()
+		fmt.Println("passwordgen", versionString(version, info, ok))
+		return nil
+	}
 
 	if *minLen < 1 || *maxLen < *minLen {
 		return errors.New("require 1 <= min <= max")
@@ -82,6 +95,41 @@ func run() error {
 		fmt.Println(phrase)
 	}
 	return nil
+}
+
+// versionString picks the version to report: an explicit ldflags version
+// first, then the module version from build info, then the VCS revision for
+// local builds without one.
+func versionString(v string, info *debug.BuildInfo, ok bool) string {
+	if v != "" {
+		return v
+	}
+	if !ok {
+		return "unknown"
+	}
+	if mv := info.Main.Version; mv != "" && mv != "(devel)" {
+		return mv
+	}
+	var rev string
+	var dirty bool
+	for _, s := range info.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			rev = s.Value
+		case "vcs.modified":
+			dirty = s.Value == "true"
+		}
+	}
+	if rev == "" {
+		return "(devel)"
+	}
+	if len(rev) > 7 {
+		rev = rev[:7]
+	}
+	if dirty {
+		rev += "-dirty"
+	}
+	return "(devel) " + rev
 }
 
 // loadWords returns every word from r made of between minLen and maxLen
