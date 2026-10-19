@@ -27,13 +27,14 @@ func main() {
 // rather than calling os.Exit so that deferred cleanup runs.
 func run() error {
 	var (
-		count  = flag.Int("words", 4, "number of words in the passphrase")
-		minLen = flag.Int("min", 4, "minimum number of letters in each word")
-		maxLen = flag.Int("max", 6, "maximum number of letters in each word")
-		sep    = flag.String("sep", "-", "separator between words")
-		dict   = flag.String("dict", "", "path to word list (default: built-in list)")
-		lower  = flag.Bool("lower", false, "do not capitalize words")
-		digits = flag.Int("digits", 0, "append this many random digits to the end")
+		count     = flag.Int("words", 4, "number of words in the passphrase")
+		minLen    = flag.Int("min", 4, "minimum number of letters in each word")
+		maxLen    = flag.Int("max", 6, "maximum number of letters in each word")
+		sep       = flag.String("sep", "-", "separator between words")
+		dict      = flag.String("dict", "", "path to word list (default: built-in list)")
+		lower     = flag.Bool("lower", false, "do not capitalize words")
+		digits    = flag.Int("digits", 0, "append this many random digits to the end")
+		noNewline = flag.Bool("n", false, "do not print a trailing newline (e.g. for piping to pbcopy)")
 	)
 	flag.Parse()
 
@@ -75,7 +76,11 @@ func run() error {
 		phrase += *sep + tail
 	}
 
-	fmt.Println(phrase)
+	if *noNewline {
+		fmt.Print(phrase)
+	} else {
+		fmt.Println(phrase)
+	}
 	return nil
 }
 

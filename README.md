@@ -49,6 +49,7 @@ passwordgen -words 5                 # five words instead of four
 passwordgen -min 3 -max 9            # full wordlist range, ~13 bits/word
 passwordgen -sep _ -lower            # level_smile_chair_slaw
 passwordgen -digits 2                # Level-Smile-Chair-Slaw-17
+passwordgen -n | pbcopy              # copy without a trailing newline
 ```
 
 ### Flags
@@ -62,6 +63,7 @@ passwordgen -digits 2                # Level-Smile-Chair-Slaw-17
 | `-lower`  | `false`           | do not capitalize words                 |
 | `-digits` | `0`               | append this many random digits          |
 | `-dict`   | *(built-in list)* | path to an external word list           |
+| `-n`      | `false`           | do not print a trailing newline         |
 
 ## Strength
 
